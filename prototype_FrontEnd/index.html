@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blood Bank Management System</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <i class="fas fa-heartbeat"></i>
+            <h1>Blood Bank Management System</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#donor-section" class="nav-link"><i class="fas fa-user-plus"></i> Donors</a></li>
+                <li><a href="#patient-section" class="nav-link"><i class="fas fa-procedures"></i> Patients</a></li>
+                <li><a href="#inventory-section" class="nav-link"><i class="fas fa-vial"></i> Inventory</a></li>
+                <li><a href="#find-donor-section" class="nav-link"><i class="fas fa-search"></i> Find Donor (KNN)</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section id="donor-section" class="section-card">
+            <div class="section-header">
+                <i class="fas fa-user-plus"></i>
+                <h2>Donor Management</h2>
+            </div>
+            <div class="section-content">
+                <form id="donor-form" class="form-container">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="first-name">First Name</label>
+                            <input type="text" id="first-name" name="first_name" placeholder="First Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="middle-name">Middle Name</label>
+                            <input type="text" id="middle-name" name="middle_name" placeholder="Middle Name">
+                        </div>
+                        <div class="form-group">
+                            <label for="last-name">Last Name</label>
+                            <input type="text" id="last-name" name="last_name" placeholder="Last Name" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dob">Date of Birth</label>
+                            <input type="date" id="dob" name="dob" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="weight">Weight (kg)</label>
+                            <input type="number" id="weight" name="weight" min="45" placeholder="Weight" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="gender">Gender</label>
+                            <select id="gender" name="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="M">Male</option>
+                                <option value="F">Female</option>
+                                <option value="O">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="blood-type">Blood Type</label>
+                            <select id="blood-type" name="blood_type" required>
+                                <option value="">Select Blood Type</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="city">City</label>
+                            <input type="text" id="city" name="city" placeholder="City" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="mobile">Mobile Number</label>
+                            <input type="tel" id="mobile" name="mobile" placeholder="Mobile Number" required>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary ripple">
+                            <i class="fas fa-plus-circle"></i> Add Donor
+                        </button>
+                        <button type="reset" class="btn btn-secondary ripple">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                </form>
+                <div class="results-container">
+                    <h3><i class="fas fa-list"></i> Donor List</h3>
+                    <div id="donor-list" class="card-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="patient-section" class="section-card">
+            <div class="section-header">
+                <i class="fas fa-procedures"></i>
+                <h2>Patient Management</h2>
+            </div>
+            <div class="section-content">
+                <form id="patient-form" class="form-container">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="patient-name">Full Name</label>
+                            <input type="text" id="patient-name" name="name" placeholder="Full Name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="patient-gender">Gender</label>
+                            <select id="patient-gender" name="gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="M">Male</option>
+                                <option value="F">Female</option>
+                                <option value="O">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="patient-dob">Date of Birth</label>
+                            <input type="date" id="patient-dob" name="dob" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="patient-blood">Blood Type Needed</label>
+                            <select id="patient-blood" name="blood_group" required>
+                                <option value="">Select Blood Type</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="patient-quantity">Quantity (units)</label>
+                            <input type="number" id="patient-quantity" name="quantity" min="1" placeholder="Quantity" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="patient-hospital">Hospital</label>
+                            <input type="text" id="patient-hospital" name="hospital_name" placeholder="Hospital Name" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="patient-place">Location</label>
+                            <input type="text" id="patient-place" name="place" placeholder="Location/City" required>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary ripple">
+                            <i class="fas fa-plus-circle"></i> Add Patient
+                        </button>
+                        <button type="reset" class="btn btn-secondary ripple">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                </form>
+                <div class="results-container">
+                    <h3><i class="fas fa-list"></i> Patient List</h3>
+                    <div id="patient-list" class="card-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="inventory-section" class="section-card">
+            <div class="section-header">
+                <i class="fas fa-vial"></i>
+                <h2>Blood Inventory</h2>
+            </div>
+            <div class="section-content">
+                <div class="inventory-actions">
+                    <button id="refresh-inventory" class="btn btn-primary ripple">
+                        <i class="fas fa-sync-alt"></i> Refresh Inventory
+                    </button>
+                </div>
+                <div class="results-container">
+                    <h3><i class="fas fa-list"></i> Available Blood</h3>
+                    <div id="inventory-list" class="blood-inventory"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="find-donor-section" class="section-card">
+            <div class="section-header">
+                <i class="fas fa-search"></i>
+                <h2>Find Nearest Donor (KNN)</h2>
+            </div>
+            <div class="section-content">
+                <form id="find-donor-form" class="form-container">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="required-blood">Blood Type Needed</label>
+                            <select id="required-blood" name="blood_group" required>
+                                <option value="">Select Blood Type</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="required-rh">RH Factor</label>
+                            <select id="required-rh" name="rh_factor" required>
+                                <option value="">Select RH Factor</option>
+                                <option value="Positive">Positive</option>
+                                <option value="Negative">Negative</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="required-city">City</label>
+                            <input type="text" id="required-city" name="city" placeholder="City" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="k-value">Number of donors (K)</label>
+                            <input type="number" id="k-value" name="k" min="1" max="10" value="5" required>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary ripple">
+                            <i class="fas fa-search"></i> Find Donors
+                        </button>
+                        <button type="reset" class="btn btn-secondary ripple">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                </form>
+                <div class="results-container">
+                    <h3><i class="fas fa-list"></i> Nearest Donors</h3>
+                    <div id="nearest-donors" class="card-list"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <i class="fas fa-heartbeat"></i>
+                <span>Blood Bank Management System</span>
+            </div>
+            <p>&copy; 2025 Blood Bank Management System | KNN-based Donor Matching</p>
+        </div>
+    </footer>
+
+    <div id="notification" class="notification">
+        <div class="notification-content">
+            <i class="notification-icon"></i>
+            <span class="notification-message"></span>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
