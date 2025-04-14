@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -8,16 +8,28 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Activity, CheckCircle, XCircle, AlertTriangle, Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Activity, CheckCircle, XCircle, AlertTriangle, Clock, LogIn } from "lucide-react";
 import { useBloodBank } from "@/contexts/BloodBankContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { TransfusionEvent, TransfusionStatus } from "@/types/blood";
+import { motion } from "framer-motion";
 
 const TransfusionEvents = () => {
   const { transfusions, updateTransfusionStatus } = useBloodBank();
+  const { isAuthenticated, login } = useAuth();
   const [selectedTransfusion, setSelectedTransfusion] = useState<TransfusionEvent | null>(null);
   const [newStatus, setNewStatus] = useState<TransfusionStatus>("Completed");
   const [notes, setNotes] = useState("");
-  const [open, setOpen] = useState(false);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(!isAuthenticated);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState(false);
+  
+  useEffect(() => {
+    setLoginDialogOpen(!isAuthenticated);
+  }, [isAuthenticated]);
   
   // Get transfusions by status
   const getTransfusionsByStatus = (status: TransfusionStatus) => {
@@ -29,13 +41,24 @@ const TransfusionEvents = () => {
   const failedTransfusions = getTransfusionsByStatus("Failed");
   const requestingAdditionalTransfusions = getTransfusionsByStatus("Requesting Additional");
   
+  // Handle login submit
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (login(username, password)) {
+      setLoginDialogOpen(false);
+      setLoginError(false);
+    } else {
+      setLoginError(true);
+    }
+  };
+  
   // Handle update status
   const handleUpdateStatus = () => {
     if (selectedTransfusion) {
       updateTransfusionStatus(selectedTransfusion.id, newStatus, notes);
       setSelectedTransfusion(null);
       setNotes("");
-      setOpen(false);
+      setUpdateDialogOpen(false);
     }
   };
   
@@ -81,7 +104,13 @@ const TransfusionEvents = () => {
               transfusionList.map((transfusion) => {
                 const statusBadge = getStatusBadge(transfusion.status);
                 return (
-                  <TableRow key={transfusion.id}>
+                  <motion.tr 
+                    key={transfusion.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="border-b hover:bg-muted/50"
+                  >
                     <TableCell className="font-mono">{transfusion.id.substring(0, 6)}</TableCell>
                     <TableCell className="font-mono">{transfusion.donorId.substring(0, 6)}</TableCell>
                     <TableCell className="font-mono">{transfusion.recipientId.substring(0, 6)}</TableCell>
@@ -107,14 +136,15 @@ const TransfusionEvents = () => {
                           variant="outline"
                           onClick={() => {
                             setSelectedTransfusion(transfusion);
-                            setOpen(true);
+                            setUpdateDialogOpen(true);
                           }}
+                          className="transition-all hover:bg-green-100 hover:text-green-800"
                         >
                           Update
                         </Button>
                       )}
                     </TableCell>
-                  </TableRow>
+                  </motion.tr>
                 );
               })
             )}
@@ -191,7 +221,8 @@ const TransfusionEvents = () => {
         </CardContent>
       </Card>
       
-      <Dialog open={open} onOpenChange={setOpen}>
+      {/* Update Status Dialog */}
+      <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Update Transfusion Status</DialogTitle>
@@ -229,9 +260,56 @@ const TransfusionEvents = () => {
           </div>
           
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setUpdateDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleUpdateStatus}>Update Status</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Login Dialog */}
+      <Dialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LogIn className="h-5 w-5 text-blood-600" />
+              Authentication Required
+            </DialogTitle>
+            <DialogDescription>
+              Please login to access and manage transfusion events.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleLoginSubmit} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Username</label>
+              <Input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your username"
+                className={loginError ? "border-red-500" : ""}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Password</label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                className={loginError ? "border-red-500" : ""}
+              />
+            </div>
+            
+            {loginError && (
+              <p className="text-sm text-red-500">Invalid username or password. Try admin/admin123</p>
+            )}
+            
+            <DialogFooter className="pt-4">
+              <Button type="submit" className="w-full">Login</Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
