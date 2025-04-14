@@ -141,9 +141,9 @@ const TransfusionEvents = () => {
             <TabsList className="grid grid-cols-4 mb-6">
               <TabsTrigger value="pending" className="relative">
                 Pending
-                {pendingTransfusions.length > 0 && (
+                {getTransfusionsByStatus("Pending").length > 0 && (
                   <Badge className="absolute -right-1 -top-1 bg-blue-600">
-                    {pendingTransfusions.length}
+                    {getTransfusionsByStatus("Pending").length}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -158,7 +158,7 @@ const TransfusionEvents = () => {
                   These transfusions have been initiated but not yet completed. Update their status as they progress.
                 </p>
               </div>
-              {renderTransfusionTable(pendingTransfusions)}
+              {renderTransfusionTable(getTransfusionsByStatus("Pending"))}
             </TabsContent>
             <TabsContent value="completed">
               <div className="mb-4">
@@ -167,7 +167,7 @@ const TransfusionEvents = () => {
                   Successfully completed transfusions. These blood units have been removed from inventory.
                 </p>
               </div>
-              {renderTransfusionTable(completedTransfusions)}
+              {renderTransfusionTable(getTransfusionsByStatus("Completed"))}
             </TabsContent>
             <TabsContent value="failed">
               <div className="mb-4">
@@ -176,7 +176,7 @@ const TransfusionEvents = () => {
                   Transfusions that could not be completed due to various reasons.
                 </p>
               </div>
-              {renderTransfusionTable(failedTransfusions)}
+              {renderTransfusionTable(getTransfusionsByStatus("Failed"))}
             </TabsContent>
             <TabsContent value="requesting">
               <div className="mb-4">
@@ -185,7 +185,7 @@ const TransfusionEvents = () => {
                   Transfusions that require additional blood units to complete.
                 </p>
               </div>
-              {renderTransfusionTable(requestingAdditionalTransfusions)}
+              {renderTransfusionTable(getTransfusionsByStatus("Requesting Additional"))}
             </TabsContent>
           </Tabs>
         </CardContent>

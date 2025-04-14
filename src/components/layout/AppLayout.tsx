@@ -35,7 +35,7 @@ export const AppLayout = () => {
                 <SidebarMenu>
                   {menuItems.map((item) => (
                     <SidebarMenuItem key={item.path}>
-                      <SidebarMenuButton asChild active={location.pathname === item.path}>
+                      <SidebarMenuButton asChild className={location.pathname === item.path ? "bg-sidebar-accent" : ""}>
                         <Link to={item.path} className="flex items-center gap-3">
                           <item.icon className="h-5 w-5" />
                           <span>{item.title}</span>

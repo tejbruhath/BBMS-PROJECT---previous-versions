@@ -18,10 +18,10 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <BloodBankProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BloodBankProvider>
         <BrowserRouter>
           <Routes>
             <Route element={<AppLayout />}>
@@ -35,8 +35,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </TooltipProvider>
-    </BloodBankProvider>
+      </BloodBankProvider>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 

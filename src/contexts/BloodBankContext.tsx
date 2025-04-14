@@ -1,8 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { BloodGroup, BlockchainRecord, DonorInfo, InventoryItem, RecipientInfo, TransfusionEvent, TransfusionStatus } from "@/types/blood";
 import { generateId, generateMockBlockchain, generateMockDonors, generateMockInventory, generateMockRecipients, generateMockTransfusions, getExpiryDate } from "@/services/mockData";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 
 interface BloodBankContextType {
   donors: DonorInfo[];
@@ -22,7 +21,6 @@ interface BloodBankContextType {
 const BloodBankContext = createContext<BloodBankContextType | undefined>(undefined);
 
 export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { toast } = useToast();
   const [donors, setDonors] = useState<DonorInfo[]>([]);
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [recipients, setRecipients] = useState<RecipientInfo[]>([]);

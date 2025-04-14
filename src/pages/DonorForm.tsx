@@ -3,36 +3,36 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Check, Copy, Heart, AlertCircle } from "lucide-react";
+import { Heart, Copy, CheckCircle } from "lucide-react";
 import { useBloodBank } from "@/contexts/BloodBankContext";
 import { BloodGroup, RhFactor } from "@/types/blood";
+import { toast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  age: z.coerce.number().min(18, "Must be at least 18 years old").max(65, "Must be under 65 years old"),
+  age: z.coerce.number().min(0, "Age must be a positive number"),
   location: z.string().min(2, "Location is required"),
   bloodGroup: z.enum(["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"] as const),
   rhFactor: z.enum(["Positive", "Negative"] as const),
-  isSmoker: z.boolean().optional(),
-  isAlcoholConsumer: z.boolean().optional(),
-  smokingConsent: z.boolean().optional(),
-  alcoholConsent: z.boolean().optional(),
+  isSmoker: z.boolean().default(false),
+  isAlcoholConsumer: z.boolean().default(false),
+  smokingConsent: z.boolean().default(false),
+  alcoholConsent: z.boolean().default(false),
 });
 
 type FormData = z.infer<typeof formSchema>;
 
 const DonorForm = () => {
   const { addDonor } = useBloodBank();
+  const [donorId, setDonorId] = useState<string | null>(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [donorId, setDonorId] = useState("");
   const [copied, setCopied] = useState(false);
   
   const form = useForm<FormData>({
@@ -50,28 +50,40 @@ const DonorForm = () => {
     },
   });
   
-  const { watch, setValue } = form;
-  const isSmoker = watch("isSmoker");
-  const isAlcoholConsumer = watch("isAlcoholConsumer");
+  const watchIsSmoker = form.watch("isSmoker");
+  const watchIsAlcoholConsumer = form.watch("isAlcoholConsumer");
   
   const onSubmit = (data: FormData) => {
-    // Validate consents
+    // Validate consent checkboxes
     if (data.isSmoker && !data.smokingConsent) {
-      form.setError("smokingConsent", { 
-        message: "You must confirm you haven't smoked in the last 4 hours" 
+      form.setError("smokingConsent", {
+        type: "manual",
+        message: "You must confirm you haven't smoked in the last 4 hours",
       });
       return;
     }
     
     if (data.isAlcoholConsumer && !data.alcoholConsent) {
-      form.setError("alcoholConsent", { 
-        message: "You must confirm you haven't consumed alcohol in the last 3 days" 
+      form.setError("alcoholConsent", {
+        type: "manual",
+        message: "You must confirm you haven't consumed alcohol in the last 3 days",
       });
       return;
     }
     
-    // Add donor and get ID
-    const id = addDonor(data);
+    // Submit form and get donor ID
+    const id = addDonor({
+      name: data.name,
+      age: data.age,
+      location: data.location,
+      bloodGroup: data.bloodGroup,
+      rhFactor: data.rhFactor,
+      isSmoker: data.isSmoker,
+      isAlcoholConsumer: data.isAlcoholConsumer,
+      smokingConsent: data.smokingConsent,
+      alcoholConsent: data.alcoholConsent,
+    });
+    
     setDonorId(id);
     setShowDialog(true);
     
@@ -80,20 +92,31 @@ const DonorForm = () => {
   };
   
   const copyToClipboard = () => {
-    navigator.clipboard.writeText(donorId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (donorId) {
+      navigator.clipboard.writeText(donorId);
+      setCopied(true);
+      
+      toast({
+        title: "Copied to clipboard",
+        description: "Donor ID has been copied to clipboard",
+        duration: 3000,
+      });
+      
+      setTimeout(() => {
+        setCopied(false);
+      }, 3000);
+    }
   };
 
   return (
     <div className="container mx-auto max-w-2xl">
-      <Card className="border-t-4 border-t-blood-600 shadow-sm">
-        <CardHeader className="bg-blood-50 bg-opacity-50">
+      <Card className="border-t-4 border-t-red-600 shadow-sm">
+        <CardHeader className="bg-red-50 bg-opacity-50">
           <div className="flex items-center space-x-2">
-            <Heart className="h-6 w-6 text-blood-600" />
-            <CardTitle>Blood Donation Form</CardTitle>
+            <Heart className="h-6 w-6 text-red-600" />
+            <CardTitle>Donor Registration</CardTitle>
           </div>
-          <CardDescription>Fill out this form to register as a blood donor</CardDescription>
+          <CardDescription>Register as a blood donor and save lives</CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
           <Form {...form}>
@@ -120,7 +143,7 @@ const DonorForm = () => {
                     <FormItem>
                       <FormLabel>Age</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="25" {...field} />
+                        <Input type="number" placeholder="30" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -135,10 +158,10 @@ const DonorForm = () => {
                   <FormItem>
                     <FormLabel>Donation Location</FormLabel>
                     <FormControl>
-                      <Input placeholder="Memorial Hospital" {...field} />
+                      <Input placeholder="City Hospital" {...field} />
                     </FormControl>
                     <FormDescription>
-                      Usually a hospital or blood donation center
+                      Enter the hospital or blood bank where you're donating
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -203,121 +226,106 @@ const DonorForm = () => {
                 />
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="isSmoker"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>
-                            Are you a smoker?
-                          </FormLabel>
-                          <FormDescription>
-                            Check this if you smoke tobacco products
-                          </FormDescription>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                  
-                  {isSmoker && (
-                    <FormField
-                      control={form.control}
-                      name="smokingConsent"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-orange-50">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>
-                              I confirm I haven't smoked in the last 4 hours
-                            </FormLabel>
-                            <FormDescription>
-                              Required for donation eligibility
-                            </FormDescription>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="isSmoker"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox 
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          I am a smoker
+                        </FormLabel>
+                        <FormDescription>
+                          Check this if you smoke cigarettes or use tobacco products
+                        </FormDescription>
+                      </div>
+                    </FormItem>
                   )}
-                </div>
+                />
                 
-                <div className="space-y-4">
+                {watchIsSmoker && (
                   <FormField
                     control={form.control}
-                    name="isAlcoholConsumer"
+                    name="smokingConsent"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 ml-6 border-l-2 border-red-200 pl-4">
                         <FormControl>
-                          <Checkbox
+                          <Checkbox 
                             checked={field.value}
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel>
-                            Do you consume alcohol?
+                            I confirm I have not smoked in the last 4 hours
                           </FormLabel>
                           <FormDescription>
-                            Check this if you consume alcoholic beverages
+                            You must abstain from smoking for at least 4 hours before donation
                           </FormDescription>
                         </div>
                       </FormItem>
                     )}
                   />
-                  
-                  {isAlcoholConsumer && (
-                    <FormField
-                      control={form.control}
-                      name="alcoholConsent"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-orange-50">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>
-                              I confirm I haven't consumed alcohol in the last 3 days
-                            </FormLabel>
-                            <FormDescription>
-                              Required for donation eligibility
-                            </FormDescription>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                )}
+                
+                <FormField
+                  control={form.control}
+                  name="isAlcoholConsumer"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox 
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          I consume alcohol
+                        </FormLabel>
+                        <FormDescription>
+                          Check this if you drink alcoholic beverages
+                        </FormDescription>
+                      </div>
+                    </FormItem>
                   )}
-                </div>
+                />
+                
+                {watchIsAlcoholConsumer && (
+                  <FormField
+                    control={form.control}
+                    name="alcoholConsent"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0 ml-6 border-l-2 border-red-200 pl-4">
+                        <FormControl>
+                          <Checkbox 
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>
+                            I confirm I have not consumed alcohol in the last 3 days
+                          </FormLabel>
+                          <FormDescription>
+                            You must abstain from alcohol for at least 3 days before donation
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
               
-              <Alert variant="outline" className="bg-blue-50 border-blue-200">
-                <AlertCircle className="h-4 w-4 text-blue-600" />
-                <AlertTitle>Important Information</AlertTitle>
-                <AlertDescription>
-                  By submitting this form, you agree to donate blood and confirm all provided information is accurate. 
-                  You'll receive a donor ID which is important to keep for future reference.
-                </AlertDescription>
-              </Alert>
-              
-              <Button type="submit" className="w-full bg-blood-600 hover:bg-blood-700">
-                Submit Donation
+              <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
+                Register as Donor
               </Button>
             </form>
           </Form>
@@ -325,25 +333,27 @@ const DonorForm = () => {
       </Card>
       
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Thank You for Your Donation!</DialogTitle>
             <DialogDescription>
-              Your contribution will help save lives. Please keep your donor ID for future reference.
+              Your contribution will help save lives. Please keep your Donor ID for reference.
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="flex items-center space-x-2 bg-gray-100 p-4 rounded-md">
-            <span className="font-mono font-medium text-lg flex-1">{donorId}</span>
-            <Button size="sm" variant="outline" onClick={copyToClipboard}>
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          <div className="p-4 bg-gray-50 rounded-md flex items-center justify-between">
+            <span className="font-mono text-lg">{donorId}</span>
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="flex items-center gap-1"
+              onClick={copyToClipboard}
+            >
+              {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? "Copied" : "Copy ID"}
             </Button>
           </div>
-          
-          <DialogFooter className="sm:justify-center">
-            <Button className="bg-blood-600 hover:bg-blood-700" onClick={() => setShowDialog(false)}>
-              Close
-            </Button>
+          <DialogFooter>
+            <Button onClick={() => setShowDialog(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

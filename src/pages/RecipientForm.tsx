@@ -46,7 +46,14 @@ const RecipientForm = () => {
   
   const onSubmit = (data: FormData) => {
     // Register recipient and get ID
-    const id = addRecipient(data);
+    const id = addRecipient({
+      name: data.name,
+      age: data.age,
+      location: data.location,
+      bloodGroup: data.bloodGroup,
+      rhFactor: data.rhFactor,
+      urgency: data.urgency,
+    });
     setRecipientId(id);
     
     // Find matching donors
@@ -245,7 +252,7 @@ const RecipientForm = () => {
                 />
               </div>
               
-              <Alert variant="outline" className="bg-indigo-50 border-indigo-200">
+              <Alert className="bg-indigo-50 border-indigo-200">
                 <AlertCircle className="h-4 w-4 text-indigo-600" />
                 <AlertTitle>Finding Matches</AlertTitle>
                 <AlertDescription>
