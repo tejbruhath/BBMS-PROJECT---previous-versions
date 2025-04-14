@@ -15,6 +15,7 @@ import Inventory from "./pages/Inventory";
 import RecipientForm from "./pages/RecipientForm";
 import TransfusionEvents from "./pages/TransfusionEvents";
 import Blockchain from "./pages/Blockchain";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,13 +23,12 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
       <AuthProvider>
         <BloodBankProvider>
           <BrowserRouter>
+            <Toaster />
+            <Sonner />
             <Routes>
-              <Route path="/login" element={<Login />} />
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Index />} />
                 <Route path="/donor" element={<DonorForm />} />
@@ -43,6 +43,7 @@ const App = () => (
                   } 
                 />
                 <Route path="/blockchain" element={<Blockchain />} />
+                <Route path="/about" element={<About />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

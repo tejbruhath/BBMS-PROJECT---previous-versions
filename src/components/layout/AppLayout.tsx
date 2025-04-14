@@ -1,6 +1,6 @@
 import React from "react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { Heart, Droplet, Users, Clipboard, Activity, Database, Github, LogOut } from "lucide-react";
+import { Heart, Droplet, Users, Clipboard, Activity, Database, Github, LogOut, Info } from "lucide-react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ export const AppLayout = () => {
     { title: "Recipient Form", path: "/recipient", icon: Users },
     { title: "Transfusion Events", path: "/transfusions", icon: Activity },
     { title: "Blockchain", path: "/blockchain", icon: Database },
+    { title: "About", path: "/about", icon: Info },
   ];
 
   return (
