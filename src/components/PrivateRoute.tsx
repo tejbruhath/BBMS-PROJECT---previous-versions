@@ -1,10 +1,14 @@
 
-import { ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Navigate, useLocation } from "react-router-dom";
 
-export const PrivateRoute = ({ children }: { children: ReactNode }) => {
+export const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
-  
-  // We no longer redirect - the component itself handles authentication
-  return <>{children}</>;
+  const location = useLocation();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
 };

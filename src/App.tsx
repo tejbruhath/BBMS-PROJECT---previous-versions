@@ -31,11 +31,17 @@ const App = () => (
             <Routes>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
                 <Route path="/donor" element={<DonorForm />} />
                 <Route path="/inventory" element={<Inventory />} />
                 <Route path="/recipient" element={<RecipientForm />} />
-                <Route path="/transfusions" element={<TransfusionEvents />} />
+                <Route 
+                  path="/transfusions" 
+                  element={
+                    <PrivateRoute>
+                      <TransfusionEvents />
+                    </PrivateRoute>
+                  } 
+                />
                 <Route path="/blockchain" element={<Blockchain />} />
                 <Route path="/about" element={<About />} />
               </Route>
