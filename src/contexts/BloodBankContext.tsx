@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { BloodGroup, BlockchainRecord, DonorInfo, InventoryItem, RecipientInfo, TransfusionEvent, TransfusionStatus } from "@/types/blood";
 import { generateId, generateMockBlockchain, generateMockDonors, generateMockInventory, generateMockRecipients, generateMockTransfusions, getExpiryDate } from "@/services/mockData";
@@ -45,37 +46,77 @@ export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Add a new donor and update inventory
   const addDonor = async (donorData: Omit<DonorInfo, "id" | "donationDate">) => {
-    const { data: donor, error: donorError } = await supabase
-      .from('donors')
-      .insert([donorData])
-      .select()
-      .single();
+    try {
+      // Map the donor data to match Supabase table structure
+      const supabaseDonorData = {
+        name: donorData.name,
+        age: donorData.age,
+        location: donorData.location,
+        blood_group: donorData.bloodGroup,
+        rh_factor: donorData.rhFactor,
+        is_smoker: donorData.isSmoker,
+        is_alcohol_consumer: donorData.isAlcoholConsumer,
+        smoking_consent: donorData.smokingConsent,
+        alcohol_consent: donorData.alcoholConsent
+      };
 
-    if (donorError) {
-      console.error('Error adding donor:', donorError);
+      const { data: donor, error: donorError } = await supabase
+        .from('donors')
+        .insert([supabaseDonorData])
+        .select()
+        .single();
+
+      if (donorError) {
+        console.error('Error adding donor:', donorError);
+        return '';
+      }
+
+      // Add to blood inventory
+      const inventoryItem = {
+        donor_id: donor.id,
+        blood_group: donorData.bloodGroup,
+        rh_factor: donorData.rhFactor,
+        location: donorData.location,
+        donation_date: new Date().toISOString(),
+        expiry_date: new Date(Date.now() + 42 * 24 * 60 * 60 * 1000).toISOString(),
+        status: 'Available'
+      };
+
+      const { error: inventoryError } = await supabase
+        .from('blood_inventory')
+        .insert([inventoryItem]);
+
+      if (inventoryError) {
+        console.error('Error adding to inventory:', inventoryError);
+      }
+
+      // Update local state with the new donor
+      const newDonor: DonorInfo = {
+        id: donor.id,
+        name: donorData.name,
+        age: donorData.age,
+        location: donorData.location,
+        bloodGroup: donorData.bloodGroup,
+        rhFactor: donorData.rhFactor,
+        isSmoker: donorData.isSmoker,
+        isAlcoholConsumer: donorData.isAlcoholConsumer,
+        smokingConsent: donorData.smokingConsent,
+        alcoholConsent: donorData.alcoholConsent,
+        donationDate: new Date().toISOString()
+      };
+      
+      setDonors(prev => [...prev, newDonor]);
+
+      toast({
+        title: "Donor Registration Successful",
+        description: "Your donation information has been recorded",
+      });
+
+      return donor.id;
+    } catch (error) {
+      console.error("Error in addDonor:", error);
       return '';
     }
-
-    // Add to blood inventory
-    const inventoryItem = {
-      donor_id: donor.id,
-      blood_group: donorData.bloodGroup,
-      rh_factor: donorData.rhFactor,
-      location: donorData.location,
-      donation_date: new Date().toISOString(),
-      expiry_date: new Date(Date.now() + 42 * 24 * 60 * 60 * 1000).toISOString(),
-      status: 'Available'
-    };
-
-    const { error: inventoryError } = await supabase
-      .from('blood_inventory')
-      .insert([inventoryItem]);
-
-    if (inventoryError) {
-      console.error('Error adding to inventory:', inventoryError);
-    }
-
-    return donor.id;
   };
 
   // Add a new recipient

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -25,7 +26,17 @@ const Inventory = () => {
       return;
     }
     
-    setInventory(data as InventoryItem[]);
+    // Map the Supabase data format to our app's format
+    const mappedInventory: InventoryItem[] = (data || []).map(item => ({
+      donorId: item.donor_id || '',
+      bloodGroup: item.blood_group as BloodGroup,
+      rhFactor: item.rh_factor as "Positive" | "Negative",
+      location: item.location,
+      donationDate: item.donation_date,
+      expiryDate: item.expiry_date
+    }));
+    
+    setInventory(mappedInventory);
   };
   
   const getCountByBloodGroup = (bloodGroup: BloodGroup) => {
