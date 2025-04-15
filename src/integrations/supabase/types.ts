@@ -9,6 +9,122 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      blood_inventory: {
+        Row: {
+          blood_group: string
+          donation_date: string
+          donor_id: string | null
+          expiry_date: string
+          id: string
+          location: string
+          rh_factor: string
+          status: string | null
+        }
+        Insert: {
+          blood_group: string
+          donation_date: string
+          donor_id?: string | null
+          expiry_date: string
+          id?: string
+          location: string
+          rh_factor: string
+          status?: string | null
+        }
+        Update: {
+          blood_group?: string
+          donation_date?: string
+          donor_id?: string | null
+          expiry_date?: string
+          id?: string
+          location?: string
+          rh_factor?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blood_inventory_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      donors: {
+        Row: {
+          age: number
+          alcohol_consent: boolean | null
+          blood_group: string
+          donation_date: string | null
+          id: string
+          is_alcohol_consumer: boolean | null
+          is_smoker: boolean | null
+          location: string
+          name: string
+          rh_factor: string
+          smoking_consent: boolean | null
+        }
+        Insert: {
+          age: number
+          alcohol_consent?: boolean | null
+          blood_group: string
+          donation_date?: string | null
+          id?: string
+          is_alcohol_consumer?: boolean | null
+          is_smoker?: boolean | null
+          location: string
+          name: string
+          rh_factor: string
+          smoking_consent?: boolean | null
+        }
+        Update: {
+          age?: number
+          alcohol_consent?: boolean | null
+          blood_group?: string
+          donation_date?: string | null
+          id?: string
+          is_alcohol_consumer?: boolean | null
+          is_smoker?: boolean | null
+          location?: string
+          name?: string
+          rh_factor?: string
+          smoking_consent?: boolean | null
+        }
+        Relationships: []
+      }
+      recipients: {
+        Row: {
+          age: number
+          blood_group: string
+          id: string
+          location: string
+          name: string
+          request_date: string | null
+          rh_factor: string
+          urgency: string
+        }
+        Insert: {
+          age: number
+          blood_group: string
+          id?: string
+          location: string
+          name: string
+          request_date?: string | null
+          rh_factor: string
+          urgency: string
+        }
+        Update: {
+          age?: number
+          blood_group?: string
+          id?: string
+          location?: string
+          name?: string
+          request_date?: string | null
+          rh_factor?: string
+          urgency?: string
+        }
+        Relationships: []
+      }
       test_table: {
         Row: {
           created_at: string
@@ -26,6 +142,54 @@ export type Database = {
           test_column?: number | null
         }
         Relationships: []
+      }
+      transfusions: {
+        Row: {
+          blood_group: string
+          donor_id: string | null
+          id: string
+          location: string
+          notes: string | null
+          recipient_id: string | null
+          status: string | null
+          transfusion_date: string | null
+        }
+        Insert: {
+          blood_group: string
+          donor_id?: string | null
+          id?: string
+          location: string
+          notes?: string | null
+          recipient_id?: string | null
+          status?: string | null
+          transfusion_date?: string | null
+        }
+        Update: {
+          blood_group?: string
+          donor_id?: string | null
+          id?: string
+          location?: string
+          notes?: string | null
+          recipient_id?: string | null
+          status?: string | null
+          transfusion_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfusions_donor_id_fkey"
+            columns: ["donor_id"]
+            isOneToOne: false
+            referencedRelation: "donors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfusions_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "recipients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

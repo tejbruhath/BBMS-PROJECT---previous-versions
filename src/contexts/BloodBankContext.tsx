@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { BloodGroup, BlockchainRecord, DonorInfo, InventoryItem, RecipientInfo, TransfusionEvent, TransfusionStatus } from "@/types/blood";
 import { generateId, generateMockBlockchain, generateMockDonors, generateMockInventory, generateMockRecipients, generateMockTransfusions, getExpiryDate } from "@/services/mockData";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface BloodBankContextType {
   donors: DonorInfo[];
@@ -9,7 +10,7 @@ interface BloodBankContextType {
   recipients: RecipientInfo[];
   transfusions: TransfusionEvent[];
   blockchain: BlockchainRecord[];
-  addDonor: (donor: Omit<DonorInfo, "id" | "donationDate">) => string;
+  addDonor: (donor: Omit<DonorInfo, "id" | "donationDate">) => Promise<string>;
   addRecipient: (recipient: Omit<RecipientInfo, "id" | "requestDate">) => string;
   findMatchingDonors: (recipient: RecipientInfo) => InventoryItem[];
   createTransfusion: (donorId: string, recipientId: string, bloodGroup: BloodGroup, location: string) => string;
@@ -43,50 +44,38 @@ export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, []);
 
   // Add a new donor and update inventory
-  const addDonor = (donorData: Omit<DonorInfo, "id" | "donationDate">) => {
-    const id = generateId();
-    const donationDate = new Date().toISOString().split('T')[0];
-    
-    const newDonor: DonorInfo = {
-      ...donorData,
-      id,
-      donationDate
-    };
-    
-    setDonors(prev => [...prev, newDonor]);
-    
-    // Add to inventory
-    const newInventoryItem: InventoryItem = {
-      donorId: id,
-      bloodGroup: donorData.bloodGroup,
-      rhFactor: donorData.rhFactor,
+  const addDonor = async (donorData: Omit<DonorInfo, "id" | "donationDate">) => {
+    const { data: donor, error: donorError } = await supabase
+      .from('donors')
+      .insert([donorData])
+      .select()
+      .single();
+
+    if (donorError) {
+      console.error('Error adding donor:', donorError);
+      return '';
+    }
+
+    // Add to blood inventory
+    const inventoryItem = {
+      donor_id: donor.id,
+      blood_group: donorData.bloodGroup,
+      rh_factor: donorData.rhFactor,
       location: donorData.location,
-      donationDate,
-      expiryDate: getExpiryDate(donationDate)
+      donation_date: new Date().toISOString(),
+      expiry_date: new Date(Date.now() + 42 * 24 * 60 * 60 * 1000).toISOString(),
+      status: 'Available'
     };
-    
-    setInventory(prev => [...prev, newInventoryItem]);
-    
-    // Add to blockchain
-    const newBlockchainRecord: BlockchainRecord = {
-      blockId: generateId(),
-      timestamp: new Date().toISOString(),
-      donorId: id,
-      transactionType: "Donation",
-      status: "Valid",
-      bloodGroup: donorData.bloodGroup,
-      location: donorData.location
-    };
-    
-    setBlockchain(prev => [newBlockchainRecord, ...prev]);
-    
-    toast({
-      title: "Donation Successful",
-      description: `Donor ID: ${id} has been registered`,
-      duration: 5000,
-    });
-    
-    return id;
+
+    const { error: inventoryError } = await supabase
+      .from('blood_inventory')
+      .insert([inventoryItem]);
+
+    if (inventoryError) {
+      console.error('Error adding to inventory:', inventoryError);
+    }
+
+    return donor.id;
   };
 
   // Add a new recipient
