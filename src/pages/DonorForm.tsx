@@ -34,7 +34,6 @@ const DonorForm = () => {
   const [donorId, setDonorId] = useState<string | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -54,7 +53,7 @@ const DonorForm = () => {
   const watchIsSmoker = form.watch("isSmoker");
   const watchIsAlcoholConsumer = form.watch("isAlcoholConsumer");
   
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = (data: FormData) => {
     // Validate consent checkboxes
     if (data.isSmoker && !data.smokingConsent) {
       form.setError("smokingConsent", {
@@ -72,43 +71,24 @@ const DonorForm = () => {
       return;
     }
     
-    setIsSubmitting(true);
-    try {
-      // Submit form and get donor ID
-      const id = await addDonor({
-        name: data.name,
-        age: data.age,
-        location: data.location,
-        bloodGroup: data.bloodGroup,
-        rhFactor: data.rhFactor,
-        isSmoker: data.isSmoker,
-        isAlcoholConsumer: data.isAlcoholConsumer,
-        smokingConsent: data.smokingConsent,
-        alcoholConsent: data.alcoholConsent,
-      });
-      
-      if (id) {
-        setDonorId(id);
-        setShowDialog(true);
-        // Reset form
-        form.reset();
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to get donor ID. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error submitting form:", error);
-      toast({
-        title: "Error",
-        description: "There was an error submitting your form. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Submit form and get donor ID
+    const id = addDonor({
+      name: data.name,
+      age: data.age,
+      location: data.location,
+      bloodGroup: data.bloodGroup,
+      rhFactor: data.rhFactor,
+      isSmoker: data.isSmoker,
+      isAlcoholConsumer: data.isAlcoholConsumer,
+      smokingConsent: data.smokingConsent,
+      alcoholConsent: data.alcoholConsent,
+    });
+    
+    setDonorId(id);
+    setShowDialog(true);
+    
+    // Reset form
+    form.reset();
   };
   
   const copyToClipboard = () => {
@@ -344,12 +324,8 @@ const DonorForm = () => {
                 )}
               </div>
               
-              <Button 
-                type="submit" 
-                className="w-full bg-red-600 hover:bg-red-700"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Registering..." : "Register as Donor"}
+              <Button type="submit" className="w-full bg-red-600 hover:bg-red-700">
+                Register as Donor
               </Button>
             </form>
           </Form>
