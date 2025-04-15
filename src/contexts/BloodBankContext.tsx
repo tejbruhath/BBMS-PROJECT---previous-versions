@@ -61,8 +61,8 @@ export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               name: donor.name,
               age: donor.age,
               location: donor.location,
-              bloodGroup: donor.blood_group,
-              rhFactor: donor.rh_factor,
+              bloodGroup: donor.blood_group as BloodGroup,
+              rhFactor: donor.rh_factor as "Positive" | "Negative",
               isSmoker: donor.is_smoker,
               isAlcoholConsumer: donor.is_alcohol_consumer,
               smokingConsent: donor.smoking_consent,
@@ -76,8 +76,8 @@ export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           if (inventoryData && inventoryData.length > 0) {
             const mappedInventory: InventoryItem[] = inventoryData.map(item => ({
               donorId: item.donor_id,
-              bloodGroup: item.blood_group,
-              rhFactor: item.rh_factor,
+              bloodGroup: item.blood_group as BloodGroup,
+              rhFactor: item.rh_factor as "Positive" | "Negative",
               location: item.location,
               donationDate: item.donation_date,
               expiryDate: item.expiry_date
@@ -103,9 +103,9 @@ export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             name: recipient.name,
             age: recipient.age,
             location: recipient.location,
-            bloodGroup: recipient.blood_group,
-            rhFactor: recipient.rh_factor,
-            urgency: recipient.urgency,
+            bloodGroup: recipient.blood_group as BloodGroup,
+            rhFactor: recipient.rh_factor as "Positive" | "Negative",
+            urgency: recipient.urgency as "Low" | "Medium" | "High" | "Critical",
             requestDate: recipient.request_date
           }));
           setRecipients(mappedRecipients);
