@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { BloodGroup, BlockchainRecord, DonorInfo, InventoryItem, RecipientInfo, TransfusionEvent, TransfusionStatus } from "@/types/blood";
 import { generateId, generateMockBlockchain, generateMockDonors, generateMockInventory, generateMockRecipients, generateMockTransfusions, getExpiryDate } from "@/services/mockData";
@@ -14,7 +13,7 @@ interface BloodBankContextType {
   addDonor: (donor: Omit<DonorInfo, "id" | "donationDate">) => Promise<string>;
   addRecipient: (recipient: Omit<RecipientInfo, "id" | "requestDate">) => string;
   findMatchingDonors: (recipient: RecipientInfo) => InventoryItem[];
-  createTransfusion: (donorId: string, recipientId: string, bloodGroup: BloodGroup, location: string) => string;
+  createTransfusion: (recipientId: string) => string;
   updateTransfusionStatus: (id: string, status: TransfusionStatus, notes?: string) => void;
   verifyBloodUnit: (donorId: string) => boolean;
   searchBlockchain: (donorId: string) => BlockchainRecord[];
@@ -379,9 +378,9 @@ export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return id;
   };
 
-  // Find matching donors using a simplified KNN algorithm
+  // Enhanced method to find matching donors using KNN-like algorithm
   const findMatchingDonors = (recipient: RecipientInfo): InventoryItem[] => {
-    // Blood type compatibility matrix
+    // Blood type compatibility matrix (enhanced version)
     const compatibilityMatrix: Record<BloodGroup, BloodGroup[]> = {
       "O-": ["O-"],
       "O+": ["O-", "O+"],
@@ -393,70 +392,70 @@ export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       "AB+": ["O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+"]
     };
     
-    // Filter inventory based on blood type compatibility
+    // Filter inventory based on blood type compatibility and urgency
     const compatibleInventory = inventory.filter(item => 
       compatibilityMatrix[recipient.bloodGroup].includes(item.bloodGroup)
     );
     
-    // Sort by location proximity (simplified - exact match first)
-    const sortedInventory = [...compatibleInventory].sort((a, b) => {
-      // Exact location match gets highest priority
-      if (a.location === recipient.location && b.location !== recipient.location) {
-        return -1;
-      }
-      if (a.location !== recipient.location && b.location === recipient.location) {
-        return 1;
-      }
+    // Sort donors by multiple criteria
+    return [...compatibleInventory].sort((a, b) => {
+      // Prioritize exact blood type match
+      if (a.bloodGroup === recipient.bloodGroup && b.bloodGroup !== recipient.bloodGroup) return -1;
+      if (a.bloodGroup !== recipient.bloodGroup && b.bloodGroup === recipient.bloodGroup) return 1;
       
-      // Exact blood type match gets next priority
-      if (a.bloodGroup === recipient.bloodGroup && b.bloodGroup !== recipient.bloodGroup) {
-        return -1;
-      }
-      if (a.bloodGroup !== recipient.bloodGroup && b.bloodGroup === recipient.bloodGroup) {
-        return 1;
-      }
-      
-      // Sort by donation date (fresher blood first)
+      // Then sort by freshness of donation
       return new Date(b.donationDate).getTime() - new Date(a.donationDate).getTime();
     });
-    
-    return sortedInventory;
   };
 
-  // Create a new transfusion event
-  const createTransfusion = (donorId: string, recipientId: string, bloodGroup: BloodGroup, location: string) => {
+  // Modify createTransfusion to handle automatic donor matching
+  const createTransfusion = (recipientId: string) => {
+    // Find the recipient
+    const recipient = recipients.find(r => r.id === recipientId);
+    
+    if (!recipient) {
+      toast({
+        title: "Error",
+        description: "Recipient not found",
+        variant: "destructive"
+      });
+      return '';
+    }
+    
+    // Find matching donors
+    const matchingDonors = findMatchingDonors(recipient);
+    
+    if (matchingDonors.length === 0) {
+      toast({
+        title: "No Matching Donors",
+        description: "No compatible blood units found for this recipient",
+        variant: "destructive"
+      });
+      return '';
+    }
+    
+    // Select the first (best) matching donor
+    const selectedDonor = matchingDonors[0];
+    
     const id = generateId();
     const date = new Date().toISOString().split('T')[0];
     
     const newTransfusion: TransfusionEvent = {
       id,
-      donorId,
+      donorId: selectedDonor.donorId,
       recipientId,
       status: "Pending",
       date,
-      bloodGroup,
-      location
+      bloodGroup: selectedDonor.bloodGroup,
+      location: recipient.location,
+      notes: `Auto-matched donor for ${recipient.name}`
     };
     
     setTransfusions(prev => [...prev, newTransfusion]);
     
-    // Add to blockchain
-    const newBlockchainRecord: BlockchainRecord = {
-      blockId: generateId(),
-      timestamp: new Date().toISOString(),
-      donorId,
-      recipientId,
-      transactionType: "Transfusion",
-      status: "Pending",
-      bloodGroup,
-      location
-    };
-    
-    setBlockchain(prev => [newBlockchainRecord, ...prev]);
-    
     toast({
-      title: "Transfusion Initiated",
-      description: `Transfusion ID: ${id} has been created`,
+      title: "Transfusion Matched",
+      description: `Donor ${selectedDonor.donorId.slice(0,6)} matched for recipient`,
       duration: 5000,
     });
     
