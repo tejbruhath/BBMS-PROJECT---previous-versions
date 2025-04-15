@@ -7,36 +7,55 @@ import { DropletIcon, Clock } from "lucide-react";
 import { BloodGroup, InventoryItem } from "@/types/blood";
 import { BloodInventoryCharts } from "@/components/charts/BloodInventoryCharts";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const Inventory = () => {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     fetchInventory();
   }, []);
   
   const fetchInventory = async () => {
-    const { data, error } = await supabase
-      .from('blood_inventory')
-      .select('*')
-      .eq('status', 'Available');
-    
-    if (error) {
-      console.error('Error fetching inventory:', error);
-      return;
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('blood_inventory')
+        .select('*')
+        .eq('status', 'Available');
+      
+      if (error) {
+        console.error('Error fetching inventory:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch inventory data",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Map the Supabase data format to our app's format
+      const mappedInventory: InventoryItem[] = (data || []).map(item => ({
+        donorId: item.donor_id || '',
+        bloodGroup: item.blood_group as BloodGroup,
+        rhFactor: item.rh_factor as "Positive" | "Negative",
+        location: item.location,
+        donationDate: item.donation_date,
+        expiryDate: item.expiry_date
+      }));
+      
+      setInventory(mappedInventory);
+    } catch (error) {
+      console.error('Unexpected error fetching inventory:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while fetching inventory",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-    
-    // Map the Supabase data format to our app's format
-    const mappedInventory: InventoryItem[] = (data || []).map(item => ({
-      donorId: item.donor_id || '',
-      bloodGroup: item.blood_group as BloodGroup,
-      rhFactor: item.rh_factor as "Positive" | "Negative",
-      location: item.location,
-      donationDate: item.donation_date,
-      expiryDate: item.expiry_date
-    }));
-    
-    setInventory(mappedInventory);
   };
   
   const getCountByBloodGroup = (bloodGroup: BloodGroup) => {
@@ -96,56 +115,73 @@ const Inventory = () => {
           <BloodInventoryCharts inventory={chartData} />
           
           <h3 className="text-lg font-semibold mb-4 mt-8">Available Blood Units</h3>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Donor ID</TableHead>
-                  <TableHead>Blood Group</TableHead>
-                  <TableHead>RH Factor</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Donation Date</TableHead>
-                  <TableHead>Expiry</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedInventory.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blood-600"></div>
+              <p className="mt-2 text-muted-foreground">Loading inventory data...</p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
-                      No blood units available in inventory
-                    </TableCell>
+                    <TableHead>Donor ID</TableHead>
+                    <TableHead>Blood Group</TableHead>
+                    <TableHead>RH Factor</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>Donation Date</TableHead>
+                    <TableHead>Expiry</TableHead>
                   </TableRow>
-                ) : (
-                  sortedInventory.map((item) => {
-                    const expiryStatus = getExpiryStatus(item.expiryDate);
-                    return (
-                      <TableRow key={item.donorId}>
-                        <TableCell className="font-mono">{item.donorId}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-blood-50 text-blood-800 border-blood-200">
-                            {item.bloodGroup}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{item.rhFactor}</TableCell>
-                        <TableCell>{item.location}</TableCell>
-                        <TableCell>{new Date(item.donationDate).toLocaleDateString()}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className={expiryStatus.color}>
-                            <Clock className="h-3 w-3 mr-1" />
-                            {expiryStatus.label}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {sortedInventory.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                        No blood units available in inventory
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    sortedInventory.map((item) => {
+                      const expiryStatus = getExpiryStatus(item.expiryDate);
+                      return (
+                        <TableRow key={item.donorId}>
+                          <TableCell className="font-mono">{item.donorId}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-blood-50 text-blood-800 border-blood-200">
+                              {item.bloodGroup}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{item.rhFactor}</TableCell>
+                          <TableCell>{item.location}</TableCell>
+                          <TableCell>{new Date(item.donationDate).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={expiryStatus.color}>
+                              <Clock className="h-3 w-3 mr-1" />
+                              {expiryStatus.label}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
           
           <div className="mt-4 text-sm text-muted-foreground">
             <p>Total units in inventory: {inventory.length}</p>
             <p className="mt-1">Blood units typically expire 42 days after donation</p>
+          </div>
+          
+          <div className="mt-6">
+            <Button 
+              onClick={fetchInventory} 
+              variant="outline" 
+              className="text-blood-600 border-blood-200 hover:bg-blood-50"
+            >
+              Refresh Inventory
+            </Button>
           </div>
         </CardContent>
       </Card>

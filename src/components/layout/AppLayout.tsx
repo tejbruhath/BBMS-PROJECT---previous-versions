@@ -1,6 +1,7 @@
+
 import React from "react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { Heart, Droplet, Users, Clipboard, Activity, Database, Github, LogOut, Info } from "lucide-react";
+import { Heart, Droplet, Users, Clipboard, Activity, Database, Github, LogOut, Info, Home } from "lucide-react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ export const AppLayout = () => {
   const { isAuthenticated, logout } = useAuth();
 
   const menuItems = [
+    { title: "Home", path: "/", icon: Home },
     { title: "Donor Form", path: "/donor", icon: Heart },
     { title: "Inventory", path: "/inventory", icon: Droplet },
     { title: "Recipient Form", path: "/recipient", icon: Users },
@@ -25,7 +27,7 @@ export const AppLayout = () => {
           <SidebarHeader className="px-6 py-4">
             <div className="flex items-center gap-2">
               <Droplet className="h-6 w-6 text-blood-600" />
-              <span className="text-xl font-bold tracking-tight">BloodLink</span>
+              <Link to="/" className="text-xl font-bold tracking-tight">BloodLink</Link>
             </div>
             <p className="text-xs text-sidebar-foreground/60 mt-1">
               Supply Chain Nexus
@@ -83,7 +85,7 @@ export const AppLayout = () => {
             <SidebarTrigger />
             <div className="ml-4 flex items-center">
               <Droplet className="h-5 w-5 text-blood-600 animate-pulse mr-2" />
-              <h1 className="text-lg font-medium">BloodLink Supply Chain Nexus</h1>
+              <Link to="/" className="text-lg font-medium">BloodLink Supply Chain Nexus</Link>
             </div>
           </header>
           

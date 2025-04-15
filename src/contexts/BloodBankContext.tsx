@@ -31,17 +31,226 @@ export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   // Initialize with mock data
   useEffect(() => {
-    const mockDonors = generateMockDonors(15);
-    const mockInventory = generateMockInventory(mockDonors);
-    const mockRecipients = generateMockRecipients(10);
-    const mockTransfusions = generateMockTransfusions(mockInventory, mockRecipients, 5);
-    const mockBlockchain = generateMockBlockchain(mockInventory, mockTransfusions);
+    const initializeData = async () => {
+      try {
+        // Check if we already have data in Supabase
+        const { data: inventoryData, error: inventoryError } = await supabase
+          .from('blood_inventory')
+          .select('*');
 
-    setDonors(mockDonors);
-    setInventory(mockInventory);
-    setRecipients(mockRecipients);
-    setTransfusions(mockTransfusions);
-    setBlockchain(mockBlockchain);
+        if (inventoryError) {
+          console.error('Error fetching inventory:', inventoryError);
+        }
+
+        const { data: donorsData, error: donorsError } = await supabase
+          .from('donors')
+          .select('*');
+
+        if (donorsError) {
+          console.error('Error fetching donors:', donorsError);
+        }
+
+        if ((inventoryData && inventoryData.length > 0) || (donorsData && donorsData.length > 0)) {
+          // We have data in Supabase already
+          console.log('Using existing Supabase data');
+          
+          // Map donors data
+          if (donorsData && donorsData.length > 0) {
+            const mappedDonors: DonorInfo[] = donorsData.map(donor => ({
+              id: donor.id,
+              name: donor.name,
+              age: donor.age,
+              location: donor.location,
+              bloodGroup: donor.blood_group,
+              rhFactor: donor.rh_factor,
+              isSmoker: donor.is_smoker,
+              isAlcoholConsumer: donor.is_alcohol_consumer,
+              smokingConsent: donor.smoking_consent,
+              alcoholConsent: donor.alcohol_consent,
+              donationDate: donor.donation_date
+            }));
+            setDonors(mappedDonors);
+          }
+
+          // Map inventory data
+          if (inventoryData && inventoryData.length > 0) {
+            const mappedInventory: InventoryItem[] = inventoryData.map(item => ({
+              donorId: item.donor_id,
+              bloodGroup: item.blood_group,
+              rhFactor: item.rh_factor,
+              location: item.location,
+              donationDate: item.donation_date,
+              expiryDate: item.expiry_date
+            }));
+            setInventory(mappedInventory);
+          }
+        } else {
+          // No data in Supabase yet, seed with mock data
+          console.log('Seeding Supabase with mock data');
+          await seedSupabaseWithMockData();
+        }
+
+        // Fetch recipient data
+        const { data: recipientsData, error: recipientsError } = await supabase
+          .from('recipients')
+          .select('*');
+
+        if (recipientsError) {
+          console.error('Error fetching recipients:', recipientsError);
+        } else if (recipientsData) {
+          const mappedRecipients: RecipientInfo[] = recipientsData.map(recipient => ({
+            id: recipient.id,
+            name: recipient.name,
+            age: recipient.age,
+            location: recipient.location,
+            bloodGroup: recipient.blood_group,
+            rhFactor: recipient.rh_factor,
+            urgency: recipient.urgency,
+            requestDate: recipient.request_date
+          }));
+          setRecipients(mappedRecipients);
+        }
+
+        // Fetch transfusion data
+        const { data: transfusionsData, error: transfusionsError } = await supabase
+          .from('transfusions')
+          .select('*');
+
+        if (transfusionsError) {
+          console.error('Error fetching transfusions:', transfusionsError);
+        } else if (transfusionsData) {
+          const mappedTransfusions: TransfusionEvent[] = transfusionsData.map(transfusion => ({
+            id: transfusion.id,
+            donorId: transfusion.donor_id,
+            recipientId: transfusion.recipient_id,
+            status: transfusion.status as TransfusionStatus,
+            date: transfusion.transfusion_date,
+            bloodGroup: transfusion.blood_group as BloodGroup,
+            location: transfusion.location,
+            notes: transfusion.notes
+          }));
+          setTransfusions(mappedTransfusions);
+        }
+
+        // Generate blockchain records
+        const blockchainRecords = generateMockBlockchain(inventory, transfusions);
+        setBlockchain(blockchainRecords);
+      } catch (error) {
+        console.error('Error initializing data:', error);
+      }
+    };
+
+    const seedSupabaseWithMockData = async () => {
+      try {
+        // Generate mock data
+        const mockDonors = generateMockDonors(15);
+        
+        // Insert donors into Supabase
+        for (const donor of mockDonors) {
+          const { error } = await supabase
+            .from('donors')
+            .insert([{
+              id: donor.id,
+              name: donor.name,
+              age: donor.age,
+              location: donor.location,
+              blood_group: donor.bloodGroup,
+              rh_factor: donor.rhFactor,
+              is_smoker: donor.isSmoker,
+              is_alcohol_consumer: donor.isAlcoholConsumer,
+              smoking_consent: donor.smokingConsent,
+              alcohol_consent: donor.alcoholConsent,
+              donation_date: donor.donationDate
+            }]);
+          
+          if (error) {
+            console.error('Error inserting donor:', error);
+          }
+        }
+
+        // Generate mock inventory based on donors
+        const mockInventory = generateMockInventory(mockDonors);
+        
+        // Insert inventory into Supabase
+        for (const item of mockInventory) {
+          const { error } = await supabase
+            .from('blood_inventory')
+            .insert([{
+              donor_id: item.donorId,
+              blood_group: item.bloodGroup,
+              rh_factor: item.rhFactor,
+              location: item.location,
+              donation_date: item.donationDate,
+              expiry_date: item.expiryDate,
+              status: 'Available'
+            }]);
+          
+          if (error) {
+            console.error('Error inserting inventory item:', error);
+          }
+        }
+
+        // Update local state with mock data
+        setDonors(mockDonors);
+        setInventory(mockInventory);
+
+        // Generate and set mock recipients
+        const mockRecipients = generateMockRecipients(10);
+        setRecipients(mockRecipients);
+
+        // Generate and set mock transfusions
+        const mockTransfusions = generateMockTransfusions(mockInventory, mockRecipients, 5);
+        setTransfusions(mockTransfusions);
+        
+        // Insert mock recipients into Supabase
+        for (const recipient of mockRecipients) {
+          const { error } = await supabase
+            .from('recipients')
+            .insert([{
+              id: recipient.id,
+              name: recipient.name,
+              age: recipient.age,
+              location: recipient.location,
+              blood_group: recipient.bloodGroup,
+              rh_factor: recipient.rhFactor,
+              urgency: recipient.urgency,
+              request_date: recipient.requestDate
+            }]);
+          
+          if (error) {
+            console.error('Error inserting recipient:', error);
+          }
+        }
+        
+        // Insert mock transfusions into Supabase
+        for (const transfusion of mockTransfusions) {
+          const { error } = await supabase
+            .from('transfusions')
+            .insert([{
+              id: transfusion.id,
+              donor_id: transfusion.donorId,
+              recipient_id: transfusion.recipientId,
+              status: transfusion.status,
+              transfusion_date: transfusion.date,
+              blood_group: transfusion.bloodGroup,
+              location: transfusion.location,
+              notes: transfusion.notes
+            }]);
+          
+          if (error) {
+            console.error('Error inserting transfusion:', error);
+          }
+        }
+
+        // Generate blockchain records
+        const mockBlockchain = generateMockBlockchain(mockInventory, mockTransfusions);
+        setBlockchain(mockBlockchain);
+      } catch (error) {
+        console.error('Error seeding Supabase with mock data:', error);
+      }
+    };
+
+    initializeData();
   }, []);
 
   // Add a new donor and update inventory
@@ -68,6 +277,11 @@ export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       if (donorError) {
         console.error('Error adding donor:', donorError);
+        toast({
+          title: "Error",
+          description: "Failed to register donor: " + donorError.message,
+          variant: "destructive",
+        });
         return '';
       }
 
@@ -78,7 +292,7 @@ export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         rh_factor: donorData.rhFactor,
         location: donorData.location,
         donation_date: new Date().toISOString(),
-        expiry_date: new Date(Date.now() + 42 * 24 * 60 * 60 * 1000).toISOString(),
+        expiry_date: getExpiryDate(new Date().toISOString()),
         status: 'Available'
       };
 
@@ -88,6 +302,11 @@ export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       if (inventoryError) {
         console.error('Error adding to inventory:', inventoryError);
+        toast({
+          title: "Warning",
+          description: "Donor registered but failed to add to inventory: " + inventoryError.message,
+          variant: "destructive",
+        });
       }
 
       // Update local state with the new donor
@@ -107,6 +326,20 @@ export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       
       setDonors(prev => [...prev, newDonor]);
 
+      // Update inventory state
+      if (!inventoryError) {
+        const newInventoryItem: InventoryItem = {
+          donorId: donor.id,
+          bloodGroup: donorData.bloodGroup,
+          rhFactor: donorData.rhFactor,
+          location: donorData.location,
+          donationDate: new Date().toISOString(),
+          expiryDate: getExpiryDate(new Date().toISOString())
+        };
+        
+        setInventory(prev => [...prev, newInventoryItem]);
+      }
+
       toast({
         title: "Donor Registration Successful",
         description: "Your donation information has been recorded",
@@ -115,6 +348,11 @@ export const BloodBankProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       return donor.id;
     } catch (error) {
       console.error("Error in addDonor:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
       return '';
     }
   };

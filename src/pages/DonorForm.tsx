@@ -87,11 +87,18 @@ const DonorForm = () => {
         alcoholConsent: data.alcoholConsent,
       });
       
-      setDonorId(id);
-      setShowDialog(true);
-      
-      // Reset form
-      form.reset();
+      if (id) {
+        setDonorId(id);
+        setShowDialog(true);
+        // Reset form
+        form.reset();
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to get donor ID. Please try again.",
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error("Error submitting form:", error);
       toast({
