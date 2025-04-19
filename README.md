@@ -18,7 +18,7 @@ A blood bank management system that utilizes K-Nearest Neighbors (KNN) algorithm
 ### Architecture
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Frontend   │────▶│   Server    │────▶│  Database   │
+│  Frontend   │───▶ │   Server   │───▶ │  Database   │
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
